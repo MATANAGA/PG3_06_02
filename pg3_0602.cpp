@@ -1,30 +1,32 @@
 #include <iostream>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-
-using namespace std;
-
-mutex mtx;
-condition_variable cv;
-int current = 1;
-
-void PrintThread(int num) {
-    unique_lock<mutex> lock(mtx);
-    cv.wait(lock, [&] { return current == num; });  
-    cout << "thread " << num << endl;
-    current++;
-    cv.notify_all();  
-}
+#include <string>
+#include <chrono>
+#include <utility>  
 
 int main() {
-    thread t1(PrintThread, 1);
-    thread t2(PrintThread, 2);
-    thread t3(PrintThread, 3);
+    // 100,000文字の 'a' で初期化された文字列を作成
+    std::string a(100000, 'a');
 
-    t1.join();
-    t2.join();
-    t3.join();
+    // コピーにかかる時間を計測
+    auto start_copy = std::chrono::high_resolution_clock::now();
+    std::string b = a;  // コピー
+    auto end_copy = std::chrono::high_resolution_clock::now();
+    auto copy_duration = std::chrono::duration_cast<std::chrono::microseconds>(end_copy - start_copy).count();
+
+    // ムーブにかかる時間を計測
+    auto start_move = std::chrono::high_resolution_clock::now();
+    std::string c = std::move(a);  // ムーブ
+    auto end_move = std::chrono::high_resolution_clock::now();
+    auto move_duration = std::chrono::duration_cast<std::chrono::microseconds>(end_move - start_move).count();
+
+    // 結果を表示
+    std::cout << "100,000文字を移動とコピーで比較" << std::endl;
+    std::cout << "コピー: " << copy_duration << " μs" << std::endl;
+    std::cout << "移動  : " << move_duration << " μs" << std::endl;
+
+    // 終了待機
+    std::cout << "続行するには何かキーを押してください…";
+    std::cin.get();
 
     return 0;
 }
